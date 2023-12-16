@@ -7,36 +7,83 @@
     </head>
     <body>
         <script>
-            var helper = function(arr, expr, res, sum) {
+            class NumExpr {
+                constructor(val, expr) {
+                    this._val = val;
+                    this._expr = expr;
+                }
+                
+                getVal() {
+                    return this._val;
+                }
+
+                getExpr() {
+                    return this._expr;
+                }
+            }
+
+            var helper = function(arr, res) {
                 if(arr.length == 0) {
-                    if(Math.abs(sum - 24.0) <= 1e-6) {
-                        res.push(expr);
+                    return void 0;
+                }
+                if(arr.length == 1) {
+                    if(Math.abs(arr[0].getVal() - 24.0) <= 1e-6) {
+                        res.push(arr[0].getExpr());
                     }
                     return void 0;
                 }
-                for(let i = 0; i < arr.length; i++) {
+                var tmp = new NumExpr(-1, "-1");
+                for(let i = 0; i < arr.length - 1; i++) {
                     var x = arr[i];
                     arr.splice(i, 1);
-                    if(expr == "") {
-                        helper(arr, x.toFixed(0), res, x)
-                    }
-                    else {
-                        helper(arr, x.toFixed(0) + ' + (' + expr + ')', res, x + sum);
-                        helper(arr, x.toFixed(0) + ' - (' + expr + ')', res, x - sum);
-                        helper(arr, '(' + expr + ') - ' + x.toFixed(0), res, sum - x);
-                        helper(arr, x.toFixed(0) + ' * (' + expr + ')', res, x * sum);
-                        if(sum != 0) {
-                            helper(arr, x.toFixed(0) + ' / (' + expr + ')', res, x / sum);
+                    for(let j = i; j < arr.length; j++) {
+                        var y = arr[j];
+                        arr.splice(j, 1);
+                        
+                        // plus
+                        tmp = new NumExpr(x.getVal() + y.getVal(), "( " + x.getExpr() + ' + ' + y.getExpr() + ")");
+                        arr.push(tmp);
+                        helper(arr, res);
+                        arr.pop();
+                        // left subtract
+                        tmp = new NumExpr(x.getVal() - y.getVal(), "( " + x.getExpr() + ' - ' + y.getExpr() + ")");
+                        arr.push(tmp);
+                        helper(arr, res);
+                        arr.pop();
+                        // right subtract
+                        tmp = new NumExpr(y.getVal() - x.getVal(), "( " + y.getExpr() + ' - ' + x.getExpr() + ")");
+                        arr.push(tmp);
+                        helper(arr, res);
+                        arr.pop();
+                        // multiply
+                        tmp = new NumExpr(x.getVal() * y.getVal(), "( " + x.getExpr() + ' * ' + y.getExpr() + ")");
+                        arr.push(tmp);
+                        helper(arr, res);
+                        arr.pop();
+                        // left divise
+                        if(y.getVal() != 0.0) {
+                            tmp = new NumExpr(x.getVal() / y.getVal(), "( " + x.getExpr() + ' / ' + y.getExpr() + ")");
+                            arr.push(tmp);
+                            helper(arr, res);
+                            arr.pop();
                         }
-                        helper(arr, '(' + expr + ') / ' + x.toFixed(0), res, sum / x);
+                        // right divise
+                        if(x.getVal() != 0.0) {
+                            tmp = new NumExpr(y.getVal() / x.getVal(), "( " + y.getExpr() + ' / ' + x.getExpr() + ")");
+                            arr.push(tmp);
+                            helper(arr, res);
+                            arr.pop();
+                        }
+
+                        arr.splice(j, 0, y);
                     }
                     arr.splice(i, 0, x);
                 }
             }
 
             var twenty_for = function(arr) {
-                var expr = "", res = [], sum = 0.0;
-                helper(arr, expr, res, sum);
+                var res = [];
+                helper(arr, res);
                 return res;
             }
 
@@ -48,7 +95,7 @@
                 if(isNaN(x1) || isNaN(x2) || isNaN(x3) || isNaN(x4))
                     return "Invalid Input!"
                 else {
-                    var arr = [x1, x2, x3, x4];
+                    var arr = [new NumExpr(x1, x1.toFixed(0)), new NumExpr(x2, x2.toFixed(0)), new NumExpr(x3, x3.toFixed(0)), new NumExpr(x4, x4.toFixed(0))];
                     res = twenty_for(arr);
                     if(res.length > 0) {
                         return res[0];
